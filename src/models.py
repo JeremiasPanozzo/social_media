@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from sqlalchemy import func
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -19,6 +20,9 @@ class User(db.Model):
         self.email = email
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password_hash, password)
+
 class Post(db.Model):
 
     __tablename__ = 'posts'
@@ -28,9 +32,16 @@ class Post(db.Model):
     image_path = db.Column(db.String(200), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
 
-    author = db.relationship('User', back_populates='posts')
-
     def __init__(self, caption, image_path, user_id):
         self.caption = caption
         self.image_path = image_path
         self.user_id = user_id
+
+class RevokedToken(db.Model):
+    __tablename__ = "revoked_tokens"
+    id = db.Column(db.Integer, primary_key=True)
+    jti = db.Column(db.String(120), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+    def __init__(self, jti):
+        self.jti = jti
