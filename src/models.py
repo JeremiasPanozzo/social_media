@@ -33,6 +33,10 @@ class User(db.Model):
         """Find a user by username."""
         return cls.query.filter_by(username=username).first()
     
+    @classmethod
+    def find_by_id(cls, user_id):
+        return cls.query.filter_by(user_id=user_id).first()
+    
     def save(self):
         """Save the user to the database."""
         db.session.add(self)
