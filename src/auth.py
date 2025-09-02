@@ -21,7 +21,7 @@ def register():
     if not username or not password or not email:
         return jsonify({"message": "Missing username or password or email"}), 400
 
-    existing_user = User.query.filter_by(username=username).first()
+    existing_user = User.find_by_username(username)
     
     if existing_user:
         return jsonify({"message": "User already exists"}), 400
@@ -29,8 +29,7 @@ def register():
     new_user = User(username, email, password)
 
     try:
-        db.session.add(new_user)
-        db.session.commit()
+        new_user.save()
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Error creating user"}), 500
