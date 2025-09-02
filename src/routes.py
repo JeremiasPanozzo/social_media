@@ -66,3 +66,26 @@ def get_posts():
         })
 
     return jsonify(result), 200
+
+@main_bp.route('/posts/<int:post_id>', methods=['GET'])
+@jwt_required()
+def get_post(post_id):
+    user_id = get_jwt_identity()
+    post = Post.find_by_id(post_id)
+
+    if post is None:
+        return jsonify({"message": "Post not found"}), 404
+
+    image_url = url_for("main.get_posts", filename=post.image_path, _external=True)
+    result = {
+        "post_id": post.post_id,
+        "caption": post.caption,
+        "image_path": image_url,
+        "author": {
+            "user_id": post.author.user_id,
+            "username": post.author.username,
+            "email": post.author.email
+        }
+    }
+
+    return jsonify(result), 200
