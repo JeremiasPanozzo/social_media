@@ -1,13 +1,12 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt, get_jwt_identity
-from .models import User, db
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt, get_jwt_identity
+from .models import User
 from .models import RevokedToken, User
+from extension import db, jwt
 
-bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__)
 
-jwt = JWTManager()
-
-@bp.route('/register', methods=['POST'])
+@auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
 
@@ -36,7 +35,7 @@ def register():
     
     return jsonify({"message": "User registered successfully"}), 201
 
-@bp.route('/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
 
@@ -57,7 +56,7 @@ def login():
     access_token = create_access_token(identity=str(user.user_id))
     return jsonify(access_token=access_token)
 
-@bp.route('/logout', methods=['POST'])
+@auth_bp.route('/logout', methods=['POST'])
 @jwt_required()
 def logout():
     jti = get_jwt()["jti"]
