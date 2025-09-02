@@ -1,3 +1,4 @@
+from typing import Any
 from extension import db, bcrypt
 from sqlalchemy import func
 
@@ -39,6 +40,8 @@ class User(db.Model):
 
 class Post(db.Model):
 
+    """Post model."""
+
     __tablename__ = 'posts'
 
     post_id = db.Column(db.Integer, primary_key=True)
@@ -47,11 +50,25 @@ class Post(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
 
     def __init__(self, caption, image_path, user_id):
+        """Post model constructor."""
         self.caption = caption
         self.image_path = image_path
         self.user_id = user_id
 
+    def save(self):
+        """Save the post to the database."""
+        db.session.add(self)
+        db.session.commit()
+
+    @classmethod
+    def find_by_user(cls, user_id):
+        """Find posts by user ID."""
+        return cls.query.filter_by(user_id=user_id).all()
+
 class RevokedToken(db.Model):
+
+    """Revoked Token model."""
+    
     __tablename__ = "revoked_tokens"
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(120), nullable=False)
