@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt, get_jwt_identity
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt, get_jwt_identity
 from .models import User
 from .models import RevokedToken, User
 from extension import db, jwt
@@ -48,13 +48,15 @@ def login():
     if not username or not password:
         return jsonify({"message": "Missing username or password"}), 400
     
-    user = User.query.filter_by(username=username).first()
+    user = User.find_by_username(username)
 
     if not user or not user.check_password(password):
         return jsonify({"message": "Invalid username or password"}), 401
 
     access_token = create_access_token(identity=str(user.user_id))
-    return jsonify(access_token=access_token)
+    refresh_token = create_refresh_token(identity=str(user.user_id))
+
+    return jsonify({"access_token": access_token, "refresh_token": refresh_token})
 
 @auth_bp.route('/logout', methods=['POST'])
 @jwt_required()
@@ -69,7 +71,20 @@ def logout():
         db.session.rollback()
         return jsonify({'error': 'Failed to log out'}), 500
 
+## Errors token handlers ##
 @jwt.token_in_blocklist_loader
 def check_if_token_revoked(jwt_header, jwt_payload):
     jti = jwt_payload["jti"]
     return RevokedToken.query.filter_by(jti=jti).first() is not None
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_data):
+    return jsonify({"message": "Token has expired"}), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    return jsonify({"message": "Invalid token", "error": str(error)}), 401
+
+@jwt.unauthorized_loader
+def missing_token_callback(error):
+    return jsonify({"message": "Request does not contain an access token", "error": str(error)}), 401
