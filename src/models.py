@@ -64,6 +64,11 @@ class Post(db.Model):
     def find_by_user(cls, user_id):
         """Find posts by user ID."""
         return cls.query.filter_by(user_id=user_id).all()
+    
+    @classmethod
+    def find_by_id(cls, post_id):
+        """Find a post by ID."""
+        return cls.query.filter_by(post_id=post_id).first()
 
 class RevokedToken(db.Model):
 
