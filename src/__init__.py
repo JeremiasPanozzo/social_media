@@ -2,6 +2,7 @@ from flask import Flask
 from dotenv import load_dotenv
 from .models import bcrypt, db
 from .auth import jwt
+from .routes import main_bp
 
 def create_app():
     
@@ -21,6 +22,7 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-    app.register_blueprint(auth.bp)
+    app.register_blueprint(auth.bp, url_prefix='/auth')
+    app.register_blueprint(main_bp)
         
     return app
