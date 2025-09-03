@@ -36,10 +36,31 @@ class User(db.Model):
     @classmethod
     def find_by_id(cls, user_id):
         return cls.query.filter_by(user_id=user_id).first()
-    
+
+    def update(self, **data):
+        """Update allowed fields of user"""
+        allowed_fields = {"username", "email"}
+        for field, value in data.items():
+            if field in allowed_fields:
+            # Evitar que se repita username o email
+                if field == "username":
+                    
+                    raise ValueError("Username already taken")
+
+                if field == "email":
+                    raise ValueError("Email already taken")
+
+            setattr(self, field, value)
+        db.session.commit()
+
     def save(self):
         """Save the user to the database."""
         db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        """Delete the user from the database."""
+        db.session.delete(self)
         db.session.commit()
 
 class Post(db.Model):
