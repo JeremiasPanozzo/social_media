@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from extension import db, bcrypt, jwt
 from .routes import main_bp
 from .auth import auth_bp
+from .users import users_bp
 
 def create_app():
     
@@ -24,5 +25,6 @@ def create_app():
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(main_bp)
+    app.register_blueprint(users_bp, url_prefix='/users')
         
     return app
