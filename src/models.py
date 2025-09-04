@@ -84,6 +84,19 @@ class Post(db.Model):
         """Save the post to the database."""
         db.session.add(self)
         db.session.commit()
+    
+    def delete(self):
+        """Deletethe post to the database"""
+        db.session.delete(self)
+        db.session.commit()
+    
+    def update(self, **data):
+        """Update allowed fields of the post."""
+        allowed_fields = {"caption"}
+        for field, value in data.items():
+            if field in allowed_fields and value is not None:
+                setattr(self, field, value)
+        db.session.commit()
 
     @classmethod
     def find_by_user(cls, user_id):
