@@ -17,7 +17,7 @@ def get_current_user_info():
         return jsonify({"message": "User not found"}), 404
 
     result = {
-        "user_id": user.user_id,
+        "user_id": str(user.user_id),
         "username": user.username,
         "email": user.email,
     }
@@ -63,7 +63,7 @@ def delete_current_user_account():
 
     return jsonify({"message": "User account deleted"}), 200
 
-@users_bp.route('/<int:user_id>', methods=['GET'])
+@users_bp.route('/<uuid:user_id>', methods=['GET'])
 def get_user_info(user_id):
     """Get user information by user ID."""
     user = User.find_by_id(user_id)
@@ -72,9 +72,8 @@ def get_user_info(user_id):
         return jsonify({"message": "User not found"}), 404
 
     result = {
-        "user_id": user.user_id,
+        "user_id": str(user.user_id),
         "username": user.username,
-        "email": user.email,
     }
 
     return jsonify(result), 200
