@@ -124,6 +124,13 @@ class Post(db.Model):
     def find_all(cls):
         """Find all posts"""
         return cls.query.all()
+    
+    @classmethod
+    def find_all_comment(cls, post_id):
+        post = cls.query.get(post_id)
+        if post:
+            return post.comments
+        return []
 
 class Comment(db.Model):
     __tablename__ = 'comments'

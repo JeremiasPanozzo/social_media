@@ -49,7 +49,7 @@ def create_post():
 @jwt_required()
 def get_posts():
     posts = Post.find_all()
-
+    
     result = []
 
     if not posts:
@@ -57,6 +57,20 @@ def get_posts():
     
     for post in posts:
         image_url = url_for("main.uploaded_file", filename=post.image_path, _external=True)
+        
+        comments_data = []
+
+        for comment in post.comments:
+            comments_data.append({
+                "comment_id": comment.comment_id,
+                "content": comment.content,
+                "created_at": comment.created_at.isoformat(),
+                "user": {
+                    "user_id": comment.user.user_id,
+                    "username": comment.user.username
+                }
+        })
+            
         result.append({
             "post_id": post.post_id,
             "caption": post.caption,
@@ -64,7 +78,8 @@ def get_posts():
             "author": {
                 "user_id": post.author.user_id,
                 "username": post.author.username,
-            }
+            },
+            "comments": comments_data
         })
 
     return jsonify(result), 200
