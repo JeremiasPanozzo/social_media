@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from .models import User
 from extension import db
+import uuid
 
 users_bp = Blueprint('users', __name__)
 
@@ -9,7 +10,7 @@ users_bp = Blueprint('users', __name__)
 @jwt_required()
 def get_current_user_info():
     """Get login user information."""
-    user_id = get_jwt_identity()
+    user_id = uuid.UUID(get_jwt_identity())
     user = User.find_by_id(user_id)
 
     if not user:
@@ -28,7 +29,7 @@ def get_current_user_info():
 @jwt_required()
 def update_current_user_info():
     """Update login user information."""
-    user_id = get_jwt_identity()
+    user_id = uuid.UUID(get_jwt_identity())
     user = User.find_by_id(user_id)
 
     if user is None:
@@ -48,7 +49,7 @@ def update_current_user_info():
 @jwt_required()
 def delete_current_user_account():
     """Delete login user account."""
-    user_id = get_jwt_identity()
+    user_id = uuid.UUID(get_jwt_identity())
     user = User.find_by_id(user_id)
 
     if not user:
