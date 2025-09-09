@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, current_app, url_for
+from flask import Blueprint, jsonify, request, current_app, url_for, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from .models import Post
 from extension import db
@@ -48,12 +48,15 @@ def create_post():
 @posts_bp.route('/feed', methods=['GET'])
 @jwt_required()
 def get_posts():
-    user_id = uuid.UUID(get_jwt_identity())
-    posts = Post.find_by_user(user_id)
+    posts = Post.find_all()
 
     result = []
+
+    if not posts:
+        return jsonify([]), 200
+    
     for post in posts:
-        image_url = url_for("main.get_posts", filename=post.image_path, _external=True)
+        image_url = url_for("main.uploaded_file", filename=post.image_path, _external=True)
         result.append({
             "post_id": post.post_id,
             "caption": post.caption,
@@ -61,7 +64,6 @@ def get_posts():
             "author": {
                 "user_id": post.author.user_id,
                 "username": post.author.username,
-                "email": post.author.email
             }
         })
 
@@ -71,7 +73,7 @@ def get_posts():
 @jwt_required()
 def get_post(post_id):
     post = Post.find_by_id(post_id)
-    print(post)
+    
     if post is None:
         return jsonify({"message": "Post not found"}), 404
 
@@ -138,3 +140,7 @@ def edit_post(post_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Error updating post", "error": str(e)}), 500
+    
+@posts_bp.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
