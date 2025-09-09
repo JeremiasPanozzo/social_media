@@ -1,9 +1,10 @@
 from flask import Flask
 from dotenv import load_dotenv
 from extension import db, bcrypt, jwt
-from .routes import main_bp
+from .posts import posts_bp
 from .auth import auth_bp
 from .users import users_bp
+from .comments import comments_bp
 
 def create_app():
     
@@ -24,7 +25,8 @@ def create_app():
         db.create_all()
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(main_bp)
+    app.register_blueprint(posts_bp, url_prefix='/posts')
     app.register_blueprint(users_bp, url_prefix='/users')
+    app.register_blueprint(comments_bp, url_prefix='/posts')
         
     return app
