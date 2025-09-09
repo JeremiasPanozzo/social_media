@@ -14,8 +14,10 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
 
+    # Relation 1:N
     posts = db.relationship('Post', backref='author', cascade='all, delete-orphan')
-    comments = db.relationship('Comment', back_populates='user', cascade='all, delete-orphan')
+    # Relation 1:N
+    comments = db.relationship('Comment', backref='user', cascade='all, delete-orphan')
 
     def __init__(self, username, email, password):
         """User model constructor."""
@@ -84,7 +86,8 @@ class Post(db.Model):
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.user_id'), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     
-    comments = db.relationship('Comment', back_populates='post', cascade='all, delete-orphan')
+    # Relation 1:N
+    comments = db.relationship('Comment', backref='post', cascade='all, delete-orphan')
 
     def __init__(self, caption, image_path, user_id):
         """Post model constructor."""
@@ -116,6 +119,11 @@ class Post(db.Model):
     def find_by_id(cls, post_id):
         """Find a post by ID."""
         return cls.query.filter_by(post_id=post_id).first()
+    
+    @classmethod
+    def find_all(cls):
+        """Find all posts"""
+        return cls.query.all()
 
 class Comment(db.Model):
     __tablename__ = 'comments'
@@ -126,9 +134,6 @@ class Comment(db.Model):
 
     user_id = db.Column(db.ForeignKey('users.user_id'), nullable=False)
     post_id = db.Column(db.ForeignKey('posts.post_id'), nullable=False)
-    
-    user = db.relationship('User', back_populates='comments')
-    post = db.relationship('Post', back_populates='comments')
 
     def __init__(self, content, user_id, post_id):
         self.content = content
