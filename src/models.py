@@ -1,18 +1,21 @@
 from typing import Any
 from extension import db, bcrypt
 from sqlalchemy import func
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
 
 class User(db.Model):
 
     """User model."""
     
     __tablename__ = 'users'
-    user_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
 
     posts = db.relationship('Post', backref='author', cascade='all, delete-orphan')
+    comments = db.relationship('Comment', back_populates='user', cascade='all, delete-orphan')
 
     def __init__(self, username, email, password):
         """User model constructor."""
@@ -37,6 +40,10 @@ class User(db.Model):
     def find_by_id(cls, user_id):
         return cls.query.filter_by(user_id=user_id).first()
 
+    @classmethod
+    def find_by_email(cls, email):
+        return cls.query.filter_by(email=email).first()
+    
     def update(self, **data):
         """Update allowed fields of user"""
         allowed_fields = {"username", "email"}
@@ -44,11 +51,13 @@ class User(db.Model):
             if field in allowed_fields:
             # Evitar que se repita username o email
                 if field == "username":
-                    
-                    raise ValueError("Username already taken")
-
+                    existing = User.query.filter_by(username=value).first()
+                    if existing and existing.user_id != self.user_id:
+                        raise ValueError("Username already taken")
                 if field == "email":
-                    raise ValueError("Email already taken")
+                    existing = User.query.filter_by(email=value).first()
+                    if existing and existing.user_id != self.user_id:
+                        raise ValueError("Email already taken")
 
             setattr(self, field, value)
         db.session.commit()
@@ -69,10 +78,13 @@ class Post(db.Model):
 
     __tablename__ = 'posts'
 
-    post_id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     caption = db.Column(db.String(200), nullable=False)
     image_path = db.Column(db.String(200), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.user_id'), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    
+    comments = db.relationship('Comment', back_populates='post', cascade='all, delete-orphan')
 
     def __init__(self, caption, image_path, user_id):
         """Post model constructor."""
@@ -86,16 +98,13 @@ class Post(db.Model):
         db.session.commit()
     
     def delete(self):
-        """Deletethe post to the database"""
+        """Delete the post to the database"""
         db.session.delete(self)
         db.session.commit()
     
-    def update(self, **data):
+    def update(self, new_caption):
         """Update allowed fields of the post."""
-        allowed_fields = {"caption"}
-        for field, value in data.items():
-            if field in allowed_fields and value is not None:
-                setattr(self, field, value)
+        self.caption = new_caption
         db.session.commit()
 
     @classmethod
@@ -108,12 +117,40 @@ class Post(db.Model):
         """Find a post by ID."""
         return cls.query.filter_by(post_id=post_id).first()
 
+class Comment(db.Model):
+    __tablename__ = 'comments'
+
+    comment_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    content = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+    user_id = db.Column(db.ForeignKey('users.user_id'), nullable=False)
+    post_id = db.Column(db.ForeignKey('posts.post_id'), nullable=False)
+    
+    user = db.relationship('User', back_populates='comments')
+    post = db.relationship('Post', back_populates='comments')
+
+    def __init__(self, content, user_id, post_id):
+        self.content = content
+        self.user_id = user_id
+        self.post_id = post_id
+
+    def save(self):
+        """Save the comment to the database."""
+        db.session.add(self)
+        db.session.commit()
+
+    @classmethod
+    def find_by_post(cls, post_id):
+        return cls.query.filter_by(post_id=post_id).all()
+    
+
 class RevokedToken(db.Model):
 
     """Revoked Token model."""
     
     __tablename__ = "revoked_tokens"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     jti = db.Column(db.String(120), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
