@@ -21,8 +21,9 @@ def register():
         return jsonify({"message": "Missing username or password or email"}), 400
 
     existing_user = User.find_by_username(username)
+    existing_email = User.find_by_email(email)
     
-    if existing_user:
+    if existing_user or existing_email:
         return jsonify({"message": "User already exists"}), 400
     
     new_user = User(username, email, password)
@@ -31,7 +32,7 @@ def register():
         new_user.save()
     except Exception as e:
         db.session.rollback()
-        return jsonify({"message": "Error creating user"}), 500
+        return jsonify({"message": "Error creating user", "error": str(e)}), 500
     
     return jsonify({"message": "User registered successfully"}), 201
 
@@ -70,6 +71,13 @@ def logout():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'Failed to log out'}), 500
+
+@auth_bp.route('/refresh', methods=["POST"])
+@jwt_required(refresh=True) # Solo se aceptan refresh tokens
+def refresh():
+    current_user = get_jwt_identity()
+    new_access_token = create_access_token(identity=current_user)
+    return jsonify({"access_token": new_access_token}), 200
 
 ## Errors token handlers ##
 @jwt.token_in_blocklist_loader
