@@ -38,13 +38,21 @@ def get_comments(post_id):
     if not post:
         return jsonify({"error": "El post no existe"}), 404
 
+    comments_data = []
+
     comments = Comment.find_by_post(post_id=post_id)
 
-    return jsonify([
-        {
-            "id": str(c.comment_id),
-            "content": c.content,
-            "user": User.find_by_id(c.user_id),
-            "created_at": c.created_at
-        } for c in comments
-    ])
+    for c in comments:
+        comments_data.append(
+            {
+                "comment_id": c.comment_id,
+                "content": c.content,
+                "created_at": c.created_at.isoformat(),
+                "user": {
+                    "user_id": c.user.user_id,
+                    "username": c.user.username
+                }
+            }
+        )
+    return jsonify(comments_data), 200
+    

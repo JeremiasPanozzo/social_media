@@ -154,7 +154,7 @@ class Comment(db.Model):
 
     @classmethod
     def find_by_post(cls, post_id):
-        return cls.query.filter_by(post_id=post_id).all()
+        return cls.query.filter_by(post_id=post_id).order_by(Comment.created_at.desc()).all()
     
 
 class RevokedToken(db.Model):
